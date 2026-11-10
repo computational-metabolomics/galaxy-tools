@@ -1,0 +1,24 @@
+name: Other repository issue
+description: Report a repository-wide documentation, catalogue, CI or maintenance issue.
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Galaxy workflows
+        - Repository documentation
+        - Contributing guidance or templates
+        - CI workflows
+        - Catalogue or website
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Describe the issue or suggested improvement, the expected result, and the affected page, file or workflow.
+    validations:
+      required: true

@@ -1,0 +1,114 @@
+name: Run Galaxy tests with reference data
+description: Run data-manager tests, then tool tests against installed reference data
+
+inputs:
+  repository-list:
+    description: Repositories selected by the IUC setup job
+    required: true
+  chunk:
+    description: Current IUC test chunk
+    required: true
+  chunk-count:
+    description: Number of IUC test chunks
+    required: true
+  galaxy-fork:
+    description: Galaxy source repository owner
+    required: true
+  galaxy-branch:
+    description: Galaxy branch used by the original test
+    required: true
+  galaxy-slots:
+    description: Number of Galaxy job slots
+    required: true
+  test_timeout:
+    description: Maximum runtime of one tool test in seconds
+    required: false
+    default: "900"
+
+runs:
+  using: composite
+  steps:
+    - name: Install Planemo for test discovery
+      shell: bash
+      run: python -m pip install planemo
+
+    - name: Prepare manager and wrapper tests in this chunk
+      id: prepare
+      shell: bash
+      env:
+        REPOSITORIES: ${{ inputs.repository-list }}
+        CHUNK: ${{ inputs.chunk }}
+        CHUNK_COUNT: ${{ inputs.chunk-count }}
+      run: |
+        set -euo pipefail
+        mapfile -t repositories <<< "$REPOSITORIES"
+        planemo ci_find_tools --chunk_count "$CHUNK_COUNT" --chunk "$CHUNK" \
+          --group_tools --output "$RUNNER_TEMP/data-table-tools.txt" "${repositories[@]}"
+        python "$GITHUB_ACTION_PATH/scripts/prepare.py" prepare \
+          --tool-list "$RUNNER_TEMP/data-table-tools.txt" \
+          --workspace "$GITHUB_WORKSPACE/.data-manager-tests" --github-output "$GITHUB_OUTPUT"
+
+    - name: Planemo data-manager tests
+      id: managers
+      if: steps.prepare.outputs.managers != ''
+      uses: galaxyproject/planemo-ci-action@v1
+      with:
+        mode: test
+        repository-list: ${{ steps.prepare.outputs.managers }}
+        galaxy-fork: ${{ inputs.galaxy-fork }}
+        galaxy-branch: ${{ inputs.galaxy-branch }}
+        chunk: 0
+        chunk-count: 1
+        galaxy-slots: ${{ inputs.galaxy-slots }}
+        test_timeout: ${{ inputs.test_timeout }}
+        additional-planemo-options: ${{ steps.prepare.outputs.planemo-options }}
+
+    - name: Require successful installations
+      if: always() && steps.managers.outcome != 'skipped' && steps.prepare.outcome == 'success' && steps.prepare.outputs.managers != ''
+      shell: bash
+      run: |
+        mv upload/tool_test_output.json upload/manager_tool_test_output.json
+        mv upload/tool_test_output.html upload/manager_tool_test_output.html
+        rm -rf json_output
+        python "$GITHUB_ACTION_PATH/scripts/prepare.py" verify-report \
+          --workspace "$GITHUB_WORKSPACE/.data-manager-tests" --kind managers \
+          --report upload/manager_tool_test_output.json
+
+    - name: Planemo tool tests
+      if: steps.prepare.outputs.tools != ''
+      uses: galaxyproject/planemo-ci-action@v1
+      with:
+        mode: test
+        repository-list: ${{ steps.prepare.outputs.tools }}
+        galaxy-fork: ${{ inputs.galaxy-fork }}
+        galaxy-branch: ${{ inputs.galaxy-branch }}
+        chunk: 0
+        chunk-count: 1
+        galaxy-slots: ${{ inputs.galaxy-slots }}
+        test_timeout: ${{ inputs.test_timeout }}
+        additional-planemo-options: ${{ steps.prepare.outputs.planemo-options }}
+
+    - name: Require successful analyses
+      if: steps.prepare.outputs.tools != ''
+      shell: bash
+      run: |
+        python "$GITHUB_ACTION_PATH/scripts/prepare.py" verify-report \
+          --workspace "$GITHUB_WORKSPACE/.data-manager-tests" --kind tools \
+          --report upload/tool_test_output.json
+
+    - name: Merge manager and tool reports
+      if: always() && steps.prepare.outcome == 'success'
+      shell: bash
+      run: |
+        if [[ -f upload/tool_test_output.json ]]; then
+          mv upload/tool_test_output.json upload/analysis_tool_test_output.json
+        fi
+        mkdir -p upload
+        shopt -s nullglob
+        reports=(upload/*_tool_test_output.json)
+        if (( ${#reports[@]} )); then
+          planemo merge_test_reports "${reports[@]}" upload/tool_test_output.json
+        else
+          printf '{"tests": []}\n' > upload/tool_test_output.json
+        fi
+        planemo test_reports upload/tool_test_output.json --test_output upload/tool_test_output.html

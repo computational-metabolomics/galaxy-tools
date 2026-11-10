@@ -1,0 +1,24 @@
+name: Slash Command Dispatch
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  slashCommandDispatch:
+    if: >-
+      ${{ github.repository_owner == 'computational-metabolomics'
+      && contains(github.event.comment.body, '/run-all-tool-tests') }}
+    runs-on: ubuntu-latest
+    # contents: write lets github.token create the dispatch when secrets.PAT is unset.
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    env:
+      PAT: ${{ secrets.PAT }}
+    steps:
+      - name: Slash Command Dispatch
+        uses: peter-evans/slash-command-dispatch@v5
+        with:
+          token: ${{ env.PAT || github.token }}
+          commands: |
+            run-all-tool-tests

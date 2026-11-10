@@ -1,0 +1,56 @@
+{
+  "name": "Model mirror smoke test",
+  "tags": ["galaxy", "test-fixture"],
+  "description": "Synthetic CI fixtures, not trained models or scientific reference data.",
+  "source_url": "https://example.org/mirror-fixture",
+  "license": "cc0-1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "attribution": "computational-metabolomics.",
+  "current_release": "0.0.1",
+  "releases": {
+    "0.0.0": {
+      "source_url": "https://example.org/mirror-fixture/0.0.0",
+      "software_compatibility": "Synthetic fixture consumer 0.0.0",
+      "mirror": {
+        "repo": "computational-metabolomics/example-fixture",
+        "revision": "example-v1"
+      },
+      "assets": {
+        "first": {
+          "filename": "dummy-a.txt",
+          "url": "https://example.org/mirror-fixture/dummy-a.txt",
+          "md5": "452cc9147d3bd4667243500abcbf1527",
+          "sha256": "ba83379f48d4b4caee24d6a436075f591db46ae835f1dfe9818371cf18668f9e"
+        },
+        "second": {
+          "filename": "dummy-b.txt",
+          "url": "https://example.org/mirror-fixture/dummy-b.txt",
+          "md5": "07507a0173d5b2faf8ea721e92813433",
+          "sha256": "46fa132324247dd38606ca6bab28d05c5a7d733a6024c06ab3c16cad529e5e48"
+        }
+      }
+    },
+    "0.0.1": {
+      "source_url": "https://example.org/mirror-fixture/0.0.1",
+      "software_compatibility": "Synthetic fixture consumer 0.0.1",
+      "mirror": {
+        "repo": "computational-metabolomics/example-fixture",
+        "revision": "example-v2"
+      },
+      "assets": {
+        "third": {
+          "filename": "dummy-c.txt",
+          "url": "https://example.org/mirror-fixture/dummy-c.txt",
+          "md5": "54f98d6d057c485f8f23700eb9a57b1d",
+          "sha256": "90c760a13655a32ccdcd438e8490d7d81a163b6b3d29054797ecbb8d3c7f129b"
+        },
+        "second": {
+          "filename": "dummy-b.txt",
+          "url": "https://example.org/mirror-fixture/dummy-b.txt",
+          "md5": "07507a0173d5b2faf8ea721e92813433",
+          "sha256": "46fa132324247dd38606ca6bab28d05c5a7d733a6024c06ab3c16cad529e5e48"
+        }
+      }
+    }
+  }
+}

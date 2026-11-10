@@ -1,0 +1,22 @@
+<tool id="example_analysis" name="Example analysis" version="1.0.0+galaxy1" profile="25.0">
+    <description>illustrate a reference-data consumer</description>
+    <requirements>
+        <requirement type="package" version="1.0.0">example-package</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+printf '%s\n' '$reference' > '$output'
+    ]]></command>
+    <inputs>
+        <param name="reference" type="select" label="Reference data">
+            <options from_data_table="example_models"/>
+        </param>
+    </inputs>
+    <outputs>
+        <data name="output" format="txt"/>
+    </outputs>
+    <help format="markdown"><![CDATA[
+## Using the example
+
+Select an installed reference entry. This wrapper exists only for catalogue tests.
+    ]]></help>
+</tool>

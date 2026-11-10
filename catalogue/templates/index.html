@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% set is_home = true %}
+{% set home_url = 'index.html' %}
+{% set static_base = 'static' %}
+
+{% block content %}
+<main class="catalogue-content" id="main-content" tabindex="-1"{% if sections %} x-data="catalogue" x-on:pageshow.window="applyFilters"{% endif %}>
+
+<p class="catalogue-intro">A catalogue of <strong>Galaxy tool wrappers, data managers and workflows</strong>
+for metabolomics and related fields, developed and maintained by the
+<strong><a href="https://github.com/computational-metabolomics" target="_blank" rel="noopener noreferrer">Computational Metabolomics Research Group</a></strong>
+at the <strong><a href="https://www.birmingham.ac.uk/" target="_blank" rel="noopener noreferrer">University of Birmingham</a></strong> and collaborators.</p>
+
+<p class="catalogue-intro">Most tools and data managers listed here can be installed through the <strong><a href="https://toolshed.g2.bx.psu.edu/" target="_blank" rel="noopener noreferrer">Galaxy Tool Shed</a></strong>.</p>
+
+<p class="catalogue-guidance">For further information, including development and contribution guidelines, see the <a href="{{ repo_url }}#readme" target="_blank" rel="noopener noreferrer">README in the GitHub repository</a>.</p>
+
+{% if sections %}
+{% set data = namespace(entries=[]) %}
+{% for section in sections %}
+{% set data.entries = data.entries + [{'slug': section.slug, 'kind': section.kind, 'search': section.search_text | lower}] %}
+{% endfor %}
+<script type="application/json" x-ref="entries">{{ data.entries | tojson }}</script>
+{% endif %}
+
+<section class="catalogue-toolbar" aria-labelledby="browse-heading">
+    <div class="catalogue-toolbar__heading">
+        <h1 id="browse-heading">Browse catalogue</h1>
+        {% if sections %}<p class="count-line" role="status" aria-live="polite" aria-atomic="true"><strong id="tool-count" x-text="shown">{{ sections|length }}</strong> of {{ sections|length }} entries shown</p>{% endif %}
+    </div>
+    {% if sections %}
+    <div class="catalogue-controls">
+    <div class="search-field">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+        <input id="tool-search" class="search" type="search" x-ref="search" x-on:input="applyFilters" placeholder="Search…" aria-label="Search tools and data managers">
+    </div>
+    <div class="chips" role="group" aria-label="Filter by type">
+        <button class="chip-filter is-active" type="button" x-on:click="selectKind('all')" x-bind:class="{ 'is-active': kindFilter === 'all' }" x-bind:aria-pressed="kindFilter === 'all'" aria-pressed="true"><span>All entries</span><span class="filter-count">{{ sections|length }}</span></button>
+        <button class="chip-filter" type="button" x-on:click="selectKind('tool')" x-bind:class="{ 'is-active': kindFilter === 'tool' }" x-bind:aria-pressed="kindFilter === 'tool'" aria-pressed="false"><span>Tools</span><span class="filter-count">{{ sections|selectattr('kind', 'equalto', 'tool')|list|length }}</span></button>
+        <button class="chip-filter" type="button" x-on:click="selectKind('data-manager')" x-bind:class="{ 'is-active': kindFilter === 'data-manager' }" x-bind:aria-pressed="kindFilter === 'data-manager'" aria-pressed="false"><span>Data managers</span><span class="filter-count">{{ sections|selectattr('kind', 'equalto', 'data-manager')|list|length }}</span></button>
+    </div>
+    </div>
+    {% endif %}
+</section>
+
+{% if sections %}
+<div class="card catalogue-card" role="region" aria-label="Catalogue entries" aria-describedby="table-scroll-hint" tabindex="0">
+<table class="tools-table" aria-label="Tools and data managers">
+<thead>
+<tr>
+    <th scope="col">Entry</th>
+    <th scope="col">Type</th>
+    <th scope="col">Software / Package</th>
+    <th scope="col">Wrapper version</th>
+</tr>
+</thead>
+<tbody id="tool-body">
+{% for section in sections %}
+{% set m = section.main_dependency %}
+<tr class="tool-row{% if section.count > 1 %} is-suite{% endif %}" x-bind:hidden="!isVisible({{ section.slug | tojson | forceescape }})">
+    <td class="cell-tool">
+        {% if section.count > 1 %}<button class="row-toggle" type="button" tabindex="-1" aria-hidden="true" x-on:click="toggleSuite({{ section.slug | tojson | forceescape }})" x-bind:class="{ 'is-open': isExpanded({{ section.slug | tojson | forceescape }}) }" x-bind:title="isExpanded({{ section.slug | tojson | forceescape }}) ? 'Collapse wrappers' : 'Expand wrappers'" title="Expand wrappers"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>{% endif %}
+        <a href="{{ section.slug }}/index.html">{{ section.title }}</a>
+        {% if section.count > 1 %}<button class="wrap-count" type="button" x-on:click="toggleSuite({{ section.slug | tojson | forceescape }})" x-bind:aria-expanded="isExpanded({{ section.slug | tojson | forceescape }})" aria-expanded="false">{{ section.count }} wrappers</button>{% endif %}
+        {% if section.description %}<span class="cell-desc">{{ section.description }}</span>{% endif %}
+    </td>
+    <td class="cell-kind">{{ ui.entry_kind(section.kind) }}</td>
+    <td class="cell-dep">
+        {% if section.kind == 'data-manager' and section.tool_software %}{{ ui.related_software(section.tool_software, show_status=true) }}
+        {% elif section.kind == 'data-manager' %}{{ ui.manager_software(section.software_compatibility) }}
+        {% elif m and m.name != 'python' %}<span class="dep-name">{{ m.name }}</span>&nbsp;<span class="dep-ver">{{ m.version or '–' }}</span>{{ ui.sources(m.sources) }}{{ ui.software_status(m.sources) }}
+        {% else %}<span class="muted">—</span>{% endif %}
+    </td>
+    <td class="cell-version">
+        {% if section.count %}
+        <a href="{{ section.wrappers[0].source_url if section.count == 1 else section.source_url }}" target="_blank" rel="noopener noreferrer" title="View {{ 'wrapper XML' if section.count == 1 else 'suite directory' }} on GitHub">{{ ui.version_cell(section.version_tool, section.version_wrapper) }}</a>
+        {% else %}<span class="muted">No wrapper included</span>{% endif %}
+    </td>
+</tr>
+{% if section.count > 1 %}
+{% for w in section.wrappers %}
+<tr class="wrapper-row" x-bind:hidden="!isExpanded({{ section.slug | tojson | forceescape }})" hidden>
+    <td class="cell-wrapper"><a href="{{ w.page_url }}">{{ w.name }}</a></td>
+    <td class="cell-kind">{{ ui.entry_kind(section.kind) }}</td>
+    <td class="cell-dep"></td>
+    <td class="cell-version"><a href="{{ w.source_url }}" target="_blank" rel="noopener noreferrer" title="View wrapper XML on GitHub">{{ ui.version_cell(w.version_tool, w.version_wrapper) }}</a></td>
+</tr>
+{% endfor %}
+{% endif %}
+{% endfor %}
+</tbody>
+</table>
+<p class="empty" id="empty-msg" x-bind:hidden="shown !== 0" hidden>No entries match your search.</p>
+</div>
+<p class="table-scroll-hint" id="table-scroll-hint">Scroll the table horizontally to see versions and software compatibility.</p>
+{% else %}
+<section class="card empty" id="empty-catalogue">
+<p>No catalogue entries found.</p>
+</section>
+{% endif %}
+
+</main>
+{% endblock %}
+
+{% block footer %}
+<p>Generated automatically from <code>tools/</code> and <code>data_managers/</code> on {{ now }} · <a href="{{ repo_url }}" target="_blank" rel="noopener noreferrer">Source on GitHub</a></p>
+{% endblock %}

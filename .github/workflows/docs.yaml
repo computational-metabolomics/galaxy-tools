@@ -1,0 +1,111 @@
+name: Validate and Deploy Catalogue
+
+on:
+  push:
+    branches: [main]
+  # Always report validation, including publisher-only changes.
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # Refresh versions every Monday at 00:30 UTC, alongside the tool tests.
+    - cron: '30 0 * * 1'
+
+# Only the deploy job can publish; configure-pages reads the site settings.
+permissions:
+  contents: read
+  pages: read
+
+concurrency:
+  group: catalogue-pages-${{ github.ref }}
+  # Never cancel a Pages deployment on main part-way through.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  build:
+    name: Validate and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CATALOGUE_REPO_URL: ${{ github.server_url }}/${{ github.event.pull_request.head.repo.full_name || github.repository }}
+      CATALOGUE_SOURCE_REF: ${{ github.event.pull_request.head.sha || github.sha }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint repository Python
+        run: |
+          pip install flake8==7.4.1 flake8-import-order==0.19.2
+          flake8 catalogue tests .github/scripts .github/actions/data-manager-tests
+
+      - name: Compile catalogue
+        run: python -m compileall -q catalogue tests
+
+      - name: Run repository tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Build catalogue without external lookups
+        if: github.event_name == 'pull_request'
+        run: python catalogue/build.py --offline --repo-url "$CATALOGUE_REPO_URL" --source-ref "$CATALOGUE_SOURCE_REF" --version-report "$GITHUB_STEP_SUMMARY"
+
+      - name: Build catalogue with dependency lookups
+        if: github.event_name != 'pull_request'
+        run: python catalogue/build.py --repo-url "$CATALOGUE_REPO_URL" --source-ref "$CATALOGUE_SOURCE_REF" --version-report "$GITHUB_STEP_SUMMARY"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Best effort: the README embeds this image from the deployed site, so a failure here
+      # must not block the build or the deployment.
+      - name: Screenshot the catalogue for the README
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        run: |
+          pip install playwright==1.63.0 pillow==12.3.0
+          python -m playwright install --with-deps chromium
+          python .github/scripts/catalogue_screenshot.py site site/catalogue-preview.png
+
+      - name: Upload catalogue preview
+        if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
+        uses: actions/upload-artifact@v7
+        with:
+          name: catalogue-preview
+          path: site
+          if-no-files-found: error
+
+      - name: Configure GitHub Pages
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/configure-pages@v6
+
+      - name: Upload GitHub Pages artifact
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    name: Deploy GitHub Pages
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy catalogue
+        id: deployment
+        uses: actions/deploy-pages@v4

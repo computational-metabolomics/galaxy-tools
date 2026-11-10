@@ -1,0 +1,2 @@
+Dummy upload fixture C for release 0.0.1.
+Synthetic CI data only; not a trained model or scientific reference dataset.

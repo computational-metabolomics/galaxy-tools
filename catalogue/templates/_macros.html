@@ -1,0 +1,115 @@
+{# Shared UI macros: dependency badges and the logo strips. #}
+
+{%- macro available_version(version) -%}
+{{ version }}{% if version is prerelease %} (pre-release){% endif %}
+{%- endmacro -%}
+
+{%- macro entry_kind(kind, label=none) -%}
+<span class="entry-kind entry-kind--{{ 'data-manager' if kind == 'data-manager' else 'tool' }}">{{ label or ('Data manager' if kind == 'data-manager' else 'Tool') }}</span>
+{%- endmacro -%}
+
+{%- macro related_software(items, static_base='static', show_status=false) -%}
+{%- for item in items %}
+<div class="software-compatibility">
+    <span class="dep-name">{{ item.name }}</span>&nbsp;<span class="dep-ver">{{ item.version or '–' }}</span>
+    {{ sources(item.sources, static_base) }}
+    {% if show_status %}{{ software_status(item.sources) }}{% endif %}
+</div>
+{%- endfor %}
+{%- endmacro -%}
+
+{# Asset compatibility describes the consuming software, not the installer runtime. #}
+{%- macro manager_software(items) -%}
+{%- for item in items %}
+<div class="software-compatibility">
+    <span class="dep-name">{{ item.compatibility or 'Compatibility not specified' }}</span>
+    <span class="cell-desc">Data release <a href="{{ item.source_url }}" target="_blank" rel="noopener">{{ item.release }}</a></span>
+</div>
+{%- else %}
+<span class="muted">Compatibility not specified</span>
+{%- endfor %}
+{%- endmacro -%}
+
+{# Wrapper requirements, optionally consolidated across a suite. #}
+{%- macro requirements_table(requirements, used_by=false, show_sources=false, static_base='static', show_roles=false) -%}
+{%- if requirements -%}
+<div class="card{% if used_by %} requirements-card{% endif %}">
+<table class="tools-table{% if used_by %} suite-requirements{% endif %}">
+<thead><tr><th scope="col">Package</th><th scope="col">{{ 'Required version' if show_sources and not show_roles else 'Version' }}</th>{% if show_sources %}<th scope="col">Available versions</th>{% elif used_by %}<th scope="col">Used by</th>{% endif %}<th scope="col">{{ 'Software licence' if show_sources else 'Licence' }}</th></tr></thead>
+<tbody>
+{%- for r in requirements %}
+<tr>
+    <td class="cell-tool">{% if r.home is http_url %}<a href="{{ r.home }}" target="_blank" rel="noopener">{{ r.name }}</a>{% else %}{{ r.name }}{% endif %}
+    {% if show_roles %}<span class="cell-desc">{{ r.role }}</span>{% endif %}
+    {% if used_by and show_sources and r.used_by and r.used_by != 'All wrappers' %}<span class="cell-desc">Used by: {{ r.used_by }}</span>{% endif %}</td>
+    <td class="cell-version">{{ r.version or '—' }}{% if r.out_of_date and not show_sources %} <span class="badge badge--dep-outdated" title="Available version: {{ available_version(r.latest_version) }}">↑ {{ available_version(r.latest_version) }}</span>{% endif %}</td>
+    {% if show_sources %}<td class="cell-dep">{{ sources(r.sources, static_base) }}{{ software_status(r.sources) }}</td>{% elif used_by %}<td class="requirements-used-by">{{ r.used_by }}</td>{% endif %}
+    <td>{{ r.license or '—' }}</td>
+</tr>
+{%- endfor %}
+</tbody>
+</table>
+</div>
+{%- else -%}
+<p class="muted">None specified.</p>
+{%- endif -%}
+{%- endmacro -%}
+
+{# "Available from" chips for the main dependency: conda and upstream sources.
+   A source newer than the pinned version is marked with an up arrow. #}
+{%- macro sources(items, static_base='static') -%}
+{%- if items -%}
+<span class="src-chips">
+  {%- for s in items %}
+  {%- set icon = {'bioconda': 'bioconda.png', 'github': 'github.svg', 'pypi': 'pypi.svg'}.get(s.label | lower) %}
+  <a class="src-chip{% if s.newer %} src-chip--newer{% endif %}" href="{{ s.url }}" target="_blank" rel="noopener noreferrer"{% if s.newer %} title="Newer than the pinned version"{% endif %}>
+    <span class="src-chip__label">{% if icon %}<img class="src-chip__icon" src="{{ static_base }}/logos/{{ icon }}" width="14" height="14" alt="" aria-hidden="true">{% endif %}{{ s.label }}</span>{% if s.version %} <span class="src-chip__ver">{{ available_version(s.version) }}</span>{% endif %}{% if s.newer %} ↑{% endif %}
+  </a>
+  {%- endfor %}
+</span>
+{%- endif -%}
+{%- endmacro -%}
+
+{%- macro software_status(items) -%}
+{%- set newer = items | map(attribute='newer') | dependency_status -%}
+{%- if newer is none -%}
+<span class="software-status software-status--unknown" title="One or more source versions could not be compared with the pinned software version">Version status unknown</span>
+{%- elif newer -%}
+<span class="software-status software-status--newer" title="A checked package or upstream source has a newer version than the pinned software">Newer version available</span>
+{%- else -%}
+<span class="software-status software-status--ok" title="No newer version was found in the package and upstream sources checked for this software">No newer version found</span>
+{%- endif -%}
+{%- endmacro -%}
+
+{%- macro deps_badge(out_of_date, has_requirements=true, no_wrapper=false) -%}
+{%- if no_wrapper -%}
+<span class="badge badge--unknown" title="No Galaxy wrapper files are included in this repository">No wrapper included</span>
+{%- elif not has_requirements -%}
+<span class="badge badge--unknown" title="No package requirements are declared">none</span>
+{%- elif out_of_date is none -%}
+<span class="badge badge--unknown" title="Dependency freshness could not be determined">unknown</span>
+{%- elif out_of_date -%}
+<span class="badge badge--dep-outdated" title="At least one declared package has a newer Conda version">newer available</span>
+{%- else -%}
+<span class="badge badge--ok" title="No newer Conda version was found for the declared packages">no newer version found</span>
+{%- endif -%}
+{%- endmacro -%}
+
+{# Shields.io-style badge row (licence, institution, funders, Galaxy). #}
+{%- macro badge_row(badges, static_base) -%}
+{%- if badges -%}
+<div class="badgebar__inner">
+  {%- for b in badges %}
+  {%- set src = b.image if '://' in b.image else static_base ~ '/' ~ b.image %}
+  <a class="badge-link" href="{{ b.url }}" target="_blank" rel="noopener noreferrer">
+    <img src="{{ src }}" alt="{{ b.name }}" loading="lazy" onerror="this.parentElement.style.display='none'">
+  </a>
+  {%- endfor %}
+</div>
+{%- endif -%}
+{%- endmacro -%}
+
+{# Wrapper/tool version split as "<tool> +galaxyN". #}
+{%- macro version_cell(version_tool, version_wrapper) -%}
+<span class="ver-tool">{{ version_tool or '–' }}</span>{% if version_wrapper %} <span class="ver-wrap" title="Wrapper revision">+{{ version_wrapper }}</span>{% endif %}
+{%- endmacro -%}

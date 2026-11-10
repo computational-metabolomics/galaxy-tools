@@ -1,0 +1,18 @@
+<tool id="data_manager_example" name="Example reference data" version="7.0.0+galaxy2" profile="25.0" tool_type="manage_data">
+    <description>illustrate a reference-data provider</description>
+    <requirements>
+        <requirement type="package" version="3.12">python</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+echo '{}' > '$out_file'
+    ]]></command>
+    <outputs>
+        <data name="out_file" format="data_manager_json"/>
+    </outputs>
+    <help format="markdown"><![CDATA[
+## Example reference data
+
+The installer package version is independent of the reference-data release.
+This wrapper is a documentation fixture and installs no assets.
+    ]]></help>
+</tool>

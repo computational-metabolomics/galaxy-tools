@@ -1,0 +1,72 @@
+name: Propose a Galaxy tool or data manager
+description: Propose a new tool, suite or data manager for Galaxy.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Proposals do not require an implementation, stable release or Conda package.
+        Maintainers will assess suitability and agree the scope and next steps.
+        If a tool needs reference data, propose its data manager in the same issue unless one
+        already exists; they are then implemented in one pull request so CI can test them together.
+        For implementation requirements, see CONTRIBUTING.md.
+
+  - type: checkboxes
+    id: duplicate-check
+    attributes:
+      label: Existing Galaxy tools and data managers
+      description: Confirm that you checked for existing Galaxy tools and data managers.
+      options:
+        - label: I searched this repository's issues, other Galaxy tool repositories, and the Main and Test Tool Sheds.
+          required: true
+
+  - type: input
+    id: software-name
+    attributes:
+      label: Software, model or reference data name
+      description: Use the official name of the software or resource.
+    validations:
+      required: true
+
+  - type: input
+    id: upstream-url
+    attributes:
+      label: Upstream project or data URL
+      description: Link the official source repository, project website or data release.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scientific-use-case
+    attributes:
+      label: Scientific use case
+      description: Describe its purpose and intended users. For reference data, name the consuming tools or workflows, if known.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: implementation-interest
+    attributes:
+      label: Implementation interest
+      description: This is not a commitment or approval to proceed.
+      options:
+        - Proposal only
+        - I may be interested in implementing it
+        - An implementation is already in progress
+    validations:
+      required: false
+
+  - type: input
+    id: license
+    attributes:
+      label: Upstream licence (if known)
+      description: Include a licence name or link for the software or reference data.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add relevant existing work, packaging information or publications, if available.
+    validations:
+      required: false

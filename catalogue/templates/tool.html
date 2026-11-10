@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% set is_home = false %}
+{% set home_url = home_url | default('../index.html') %}
+{% set static_base = static_base | default('../static') %}
+
+{% block page_title %}{{ title }} · Galaxy Tool Catalogue for {{ repo_name }}{% endblock %}
+
+{% block content %}
+{% set requirements = suite_requirements if wrappers|length > 1 else wrappers[0].requirements if wrappers else [] %}
+{% set software_rows = detail_software_rows(requirements, main_dependency, tool_software | default([]), kind == 'data-manager') %}
+{% set grouped_details = not wrapper and wrappers %}
+<main class="content detail-content container" id="main-content" tabindex="-1">
+
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{{ home_url }}">Catalogue</a> <span aria-hidden="true">/</span> <a href="{{ home_url }}?type={{ kind }}">{{ 'Data managers' if kind == 'data-manager' else 'Tools' }}</a> <span aria-hidden="true">/</span> {% if wrapper %}<a href="{{ parent_url }}">{{ suite_title }}</a> <span aria-hidden="true">/</span> <span aria-current="page">{{ wrapper.label }}</span>{% else %}<span aria-current="page">{{ title }}</span>{% endif %}</nav>
+<div class="detail-title">
+<h1>{{ title }}</h1>
+{% if wrapper %}<a class="cell-version" href="{{ source_code_link }}" target="_blank" rel="noopener noreferrer" title="Wrapper version — view XML on GitHub">{{ ui.version_cell(version_tool, version_wrapper) }}</a>{% endif %}
+</div>
+<p class="documentation-label">{{ ui.entry_kind(kind, 'Tool suite' if kind == 'tool' and not wrapper and wrappers|length > 1 else none) }}{% if wrapper %} <span>Wrapper ID: <code>{{ wrapper.id }}</code></span>{% endif %}</p>
+{% if overview_html %}
+<section class="entry-overview doc-section" aria-label="Overview" x-ignore>{{ overview_html }}</section>
+{% elif description %}<p class="lead">{{ description }}</p>{% endif %}
+
+{% if toolshed_repositories %}
+{% set published = toolshed_repositories | selectattr('status', 'equalto', 'published') | list %}
+{% set published_suites = published | selectattr('kind', 'equalto', 'suite') | list %}
+{% set unchecked = toolshed_repositories | selectattr('status', 'equalto', 'unknown') | list %}
+{% set shed_links = published_suites or published or unchecked %}
+<p class="entry-toolshed">Tool Shed:
+{% if shed_links %}
+{% for repository in shed_links %}<a href="{{ repository.url }}" target="_blank" rel="noopener noreferrer" title="{{ repository.owner }}/{{ repository.name }}">{{ repository.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+{% if not published %}<span class="muted"> · availability not checked</span>{% endif %}
+{% else %}<span class="muted">Not currently listed</span>{% endif %}
+</p>
+{% endif %}
+
+{% if usage_html %}
+<section class="entry-usage doc-section" x-ignore>{{ usage_html }}</section>
+{% endif %}
+
+{% if grouped_details %}
+<section class="doc-section entry-tools" id="galaxy-tools">
+<h2>{{ 'Data managers' if kind == 'data-manager' else 'Galaxy tool(s)' }}</h2>
+<div class="card">
+<table class="tools-table entry-tools-table">
+<thead><tr><th scope="col">{{ 'Data manager' if kind == 'data-manager' else 'Tool' }}</th><th scope="col">Wrapper version</th></tr></thead>
+<tbody>{% for w in wrappers %}
+<tr id="{{ w.id or w.name }}"><td><a href="{{ w.url }}">{{ w.name }}</a>{% if w.id %}<span class="cell-desc">ID: <code>{{ w.id }}</code></span>{% endif %}</td><td class="cell-version"><a href="{{ w.source_url }}" target="_blank" rel="noopener noreferrer" title="View wrapper XML on GitHub">{{ ui.version_cell(w.version_tool, w.version_wrapper) }}</a></td></tr>
+{% endfor %}</tbody>
+</table>
+</div>
+</section>
+{% elif not wrapper %}
+<section class="doc-section" id="galaxy-tool">
+<h2>Wrapper status</h2>
+<p class="muted">No wrapper included{% if main_dependency and main_dependency.sources %} — see the
+<a href="{{ main_dependency.sources[0].url }}" target="_blank" rel="noopener">upstream software source</a>{% endif %}.</p>
+</section>
+{% endif %}
+
+{% if software_rows or kind == 'data-manager' %}
+<section class="doc-section entry-software" id="{{ 'suite-dependencies' if wrappers|length > 1 else 'dependencies' }}">
+<h2>Requirements</h2>
+{% if software_rows %}
+<div class="detail-table-scroll" role="region" aria-label="Software versions and licences" tabindex="0">
+{{ ui.requirements_table(software_rows, used_by=wrappers|length > 1, show_sources=true, static_base=static_base, show_roles=kind == 'data-manager') }}
+</div>
+<p class="detail-table-hint">Scroll horizontally to see all software details.</p>
+{% endif %}
+{% if kind == 'data-manager' %}
+<div class="entry-compatibility">
+<h3>Data compatibility</h3>
+<div class="cell-dep">{{ ui.manager_software(software_compatibility) }}</div>
+</div>
+{% endif %}
+</section>
+{% endif %}
+
+{% for w in wrappers if w.tables %}
+<section class="doc-section entry-reference-data" id="reference-data-{{ w.id }}">
+<h2>{{ 'Supplied' if w.is_data_manager else 'Required' }} data tables</h2>
+{% if wrappers|length > 1 %}<p>{{ w.name }}</p>{% endif %}
+<div class="card">
+<table class="tools-table">
+<thead><tr><th scope="col">Data table</th><th scope="col">{{ 'Consuming tools' if w.is_data_manager else 'Data managers' }}</th></tr></thead>
+<tbody>{% for table in w.tables %}<tr><td><code>{{ table.name }}</code></td><td>
+{% for link in table.links %}<a href="{{ site_prefix }}{{ link.page_url }}">{{ link.name }}</a>{% if not loop.last %}<br>{% endif %}
+{% else %}{{ 'No consuming wrapper in this repository yet.' if w.is_data_manager else 'No provider in this repository.' }}{% endfor %}
+</td></tr>{% endfor %}</tbody>
+</table>
+</div>
+</section>
+{% endfor %}
+
+{% if wrapper %}
+<section class="doc-section" id="tool-help" x-ignore>
+<h2>{{ 'Data manager' if kind == 'data-manager' else 'Tool' }} help</h2>
+{{ help_html }}
+</section>
+{% if wrapper.citations %}
+<section class="doc-section" id="citations">
+<h2>Citations</h2>
+<ul>{% for citation in wrapper.citations %}
+<li>{% if citation.type == 'doi' %}{% if citation_details.get(citation.text | lower) %}{{ citation_details[citation.text | lower] }}{% else %}<a href="https://doi.org/{{ citation.text | urlencode }}" target="_blank" rel="noopener noreferrer">{{ citation.text }}</a>{% endif %}{% else %}<pre>{{ citation.text }}</pre>{% endif %}</li>
+{% endfor %}</ul>
+</section>
+{% endif %}
+{% else %}
+<section id="README" class="doc-section" x-ignore>
+{{ readme_html }}
+</section>
+
+{% endif %}
+
+{% if asset_links %}
+<section class="doc-section" id="reference-assets">
+<h2>Model and reference data</h2>
+<p>Data releases, compatibility and licence terms are recorded separately from the manager wrapper version and its package requirements.</p>
+<ul>{% for link in asset_links %}<li><a href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.name }}</a></li>{% endfor %}</ul>
+</section>
+{% endif %}
+
+</main>
+{% endblock %}
+
+{% block footer %}
+<p>Part of the <a href="{{ home_url }}">Galaxy Tool Catalogue</a> · Updated {{ now }}</p>
+{% endblock %}

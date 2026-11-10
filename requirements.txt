@@ -1,0 +1,10 @@
+markdown==3.7
+jinja2==3.1.6
+pyyaml==6.0.2
+requests==2.34.2
+packaging==24.1
+bleach==6.3.0
+galaxy-util==26.1.1
+# Required by Galaxy's macro-expansion path, not declared by galaxy-util.
+lxml==6.1.1
+docutils==0.22.4

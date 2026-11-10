@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use these Galaxy tools, please cite this repository."
+title: "Galaxy Tools for Metabolomics"
+abstract: >-
+  Galaxy tools, data managers and workflows for metabolomics and related fields, maintained
+  by the Computational Metabolomics Research Group, with testing, an automatically
+  generated catalogue and publishing of reference data on Hugging Face.
+type: software
+authors:
+  - name: "Computational Metabolomics Research Group, University of Birmingham, UK"
+    website: "https://github.com/computational-metabolomics"
+repository-code: "https://github.com/computational-metabolomics/galaxy-tools"
+url: "https://computational-metabolomics.github.io/galaxy-tools/"
+license: MIT
+keywords:
+  - Galaxy
+  - metabolomics
+  - bioinformatics
+  - workflows
+  - tool wrappers

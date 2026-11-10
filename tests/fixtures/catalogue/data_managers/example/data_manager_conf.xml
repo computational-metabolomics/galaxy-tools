@@ -1,0 +1,16 @@
+<data_managers>
+    <data_manager tool_file="data_manager/example.xml" id="data_manager_example">
+        <data_table name="example_models">
+            <output>
+                <column name="value"/>
+                <column name="name"/>
+            </output>
+        </data_table>
+        <data_table name="unused_models">
+            <output>
+                <column name="value"/>
+                <column name="name"/>
+            </output>
+        </data_table>
+    </data_manager>
+</data_managers>
