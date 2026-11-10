@@ -1,0 +1,56 @@
+<!-- Synthetic reference-data example used by the CI-helper tests. -->
+<tool id="example" name="Search example reference" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" profile="25.0">
+    <description>find a line in an installed reference file</description>
+    <macros>
+        <token name="@TOOL_VERSION@">1.0.0</token>
+        <token name="@VERSION_SUFFIX@">0</token>
+        <xml name="model">
+            <options from_data_table="models">
+                <validator type="no_options" message="Install the example reference with its data manager first."/>
+            </options>
+        </xml>
+        <xml name="positive_test">
+            <test expect_num_outputs="1">
+                <param name="model" value="model1"/>
+                <param name="pattern" value="example reference data"/>
+                <output name="result" ftype="txt">
+                    <assert_contents>
+                        <has_line line="example reference data"/>
+                        <has_n_lines n="1"/>
+                    </assert_contents>
+                </output>
+            </test>
+        </xml>
+    </macros>
+    <command detect_errors="aggressive"><![CDATA[
+grep -F -- '$pattern' '${model.fields.path}' > '$result'
+    ]]></command>
+    <inputs>
+        <param name="model" type="select" label="Installed reference" help="Select the reference created by the example data manager.">
+            <expand macro="model"/>
+        </param>
+        <param name="pattern" type="text" value="example reference data" label="Text to find" help="A literal text fragment; the tool fails if no line matches.">
+            <validator type="empty_field" message="Enter text to find."/>
+        </param>
+    </inputs>
+    <outputs>
+        <data name="result" format="txt" label="${tool.name} on ${on_string}: matching lines"/>
+    </outputs>
+    <tests>
+        <test expect_failure="true" expect_exit_code="1">
+            <param name="model" value="model1"/>
+            <param name="pattern" value="not present in the reference"/>
+        </test>
+        <expand macro="positive_test"/>
+    </tests>
+    <help format="markdown"><![CDATA[
+Searches a tiny synthetic reference installed by the example data manager.
+Returns matching lines unchanged, or fails if the text is absent.
+
+This CI fixture demonstrates a data-table-backed selector and inline XML macros;
+it is not a model or metabolomics analysis tool.
+    ]]></help>
+    <citations>
+        <citation type="bibtex">@misc{galaxy_tool_xml, title={Galaxy Tool XML File}, url={https://docs.galaxyproject.org/en/latest/dev/schema.html}}</citation>
+    </citations>
+</tool>

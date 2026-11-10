@@ -1,0 +1,26 @@
+# Generated catalogue site
+/site/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+
+# Planemo / Galaxy test output
+tool_test_output.*
+.planemo/
+/.data-manager-tests/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Offline HTML snapshot
+galaxy-tools-catalogue-offline.zip

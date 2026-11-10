@@ -1,0 +1,35 @@
+name: Existing Galaxy tool or data manager issue
+description: Report an issue or request an update to a specific tool, suite or data manager.
+body:
+  - type: input
+    id: tool-name
+    attributes:
+      label: Tool, suite or data manager name
+    validations:
+      required: true
+
+  - type: dropdown
+    id: change-type
+    attributes:
+      label: Type of issue
+      options:
+        - Bug or incorrect result
+        - Software or dependency update
+        - Wrapper enhancement
+        - Tests or test data
+        - Tool Shed or installation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Include only relevant details. Remove credentials and sensitive data from logs.
+      placeholder: |
+        Bug: steps to reproduce, expected and actual results, Galaxy version and relevant logs.
+        Update: current and requested versions, plus release notes.
+        Reference data: affected tables, asset releases and the tools or data manager involved, if known.
+    validations:
+      required: true

@@ -1,0 +1,17 @@
+<tool id="fixture_mass_filter" name="Mass filter" version="2.0.0+galaxy1" profile="25.0">
+    <description>select synthetic masses</description>
+    <requirements>
+        <requirement type="package" version="2.0.0">spectral-fixture</requirement>
+    </requirements>
+    <command detect_errors="exit_code">printf 'fixture\n' &gt; '$output'</command>
+    <inputs/>
+    <outputs><data name="output" format="txt"/></outputs>
+    <help format="markdown"><![CDATA[
+## Filter settings
+
+This is synthetic help for browser tests. Return to the
+[suite workflow](README.md#workflow) or read the [peak annotator](peak_annotator.xml).
+
+<span x-text="theme" x-init="document.documentElement.dataset.compromised = 'yes'">Help must remain inert.</span>
+    ]]></help>
+</tool>

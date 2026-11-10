@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions about using Galaxy
+    url: https://help.galaxyproject.org/
+    about: Ask how to use Galaxy and its tools on Galaxy Help.

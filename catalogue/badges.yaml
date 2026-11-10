@@ -1,0 +1,35 @@
+# Badges shown in the grey bar below the masthead on each catalogue page.
+#
+# Each badge:
+#   name:  accessible label / alt text
+#   url:   external URL or repository-relative file opened when clicked
+#   image: badge image — a path under catalogue/static/ (self-hosted SVG),
+#          or an absolute URL (e.g. the live CI status badge).
+#
+# The configured SVGs below were downloaded from img.shields.io and their gradient
+# overlays removed for flat #2c3143 backgrounds that contrast subtly with the bar;
+# regenerate them (or point `image` at the live shields.io URL) to change a badge.
+# The version query refreshes browsers that cached the original shaded badges.
+# badges/catalogue.svg is not listed here; only the repository README uses it.
+
+badges:
+
+  - name: usegalaxy.eu
+    url: https://usegalaxy.eu
+    image: badges/galaxy-eu.svg?v=flat
+
+  - name: Galaxy Tool Shed
+    url: https://toolshed.g2.bx.psu.edu
+    image: badges/galaxy-toolshed.svg?v=flat
+
+  - name: Licence MIT
+    url: LICENSE
+    image: badges/mit.svg?v=flat
+
+  - name: University of Birmingham
+    url: https://www.birmingham.ac.uk
+    image: badges/uob.svg?v=flat
+
+  - name: BioFAIR
+    url: https://biofair.uk
+    image: badges/biofair.svg?v=flat

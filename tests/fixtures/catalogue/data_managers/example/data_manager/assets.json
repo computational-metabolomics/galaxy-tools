@@ -1,0 +1,13 @@
+{
+  "name": "Synthetic reference data",
+  "license": "MIT",
+  "current_release": "1.0",
+  "releases": {
+    "1.0": {
+      "mirror": {
+        "repo": "example/reference-models",
+        "revision": "v1.0"
+      }
+    }
+  }
+}

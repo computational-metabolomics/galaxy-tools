@@ -1,0 +1,69 @@
+<!-- Synthetic reference-data example used by the CI-helper tests. -->
+<tool id="install_model" name="Install example reference" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" profile="25.0" tool_type="manage_data">
+    <description>create and register a tiny reference file</description>
+    <macros>
+        <token name="@TOOL_VERSION@">1.0.0</token>
+        <token name="@VERSION_SUFFIX@">0</token>
+    </macros>
+    <requirements>
+        <requirement type="package" version="3.12">python</requirement>
+    </requirements>
+    <command detect_errors="aggressive"><![CDATA[
+python '$install_script' '$out_file' '$model'
+    ]]></command>
+    <configfiles>
+        <configfile name="install_script"><![CDATA[
+import json
+import sys
+from pathlib import Path
+
+output = Path(sys.argv[1])
+model_id = sys.argv[2]
+if model_id != "model1":
+    sys.exit("Unknown example reference: " + model_id)
+params = json.loads(output.read_text())
+directory = Path(params["output_data"][0]["extra_files_path"])
+directory.mkdir(parents=True, exist_ok=True)
+(directory / "reference.txt").write_text("example reference data\n")
+entry = {"value": model_id, "name": "Example reference", "path": "reference.txt"}
+output.write_text(json.dumps({"data_tables": {"models": [entry]}}))
+        ]]></configfile>
+    </configfiles>
+    <inputs>
+        <param name="model" type="text" value="model1" label="Reference ID" help="This synthetic example supports model1 only.">
+            <validator type="regex" message="Use letters, digits or underscores only.">^[A-Za-z0-9_]+$</validator>
+        </param>
+    </inputs>
+    <outputs>
+        <data name="out_file" format="data_manager_json" label="${tool.name}: ${model}"/>
+    </outputs>
+    <tests>
+        <test expect_failure="true" expect_exit_code="1">
+            <param name="model" value="unknown"/>
+            <assert_stderr>
+                <has_text text="Unknown example reference: unknown"/>
+            </assert_stderr>
+        </test>
+        <test expect_num_outputs="1">
+            <param name="model" value="model1"/>
+            <output name="out_file" ftype="data_manager_json">
+                <assert_contents>
+                    <has_text text="&quot;data_tables&quot;"/>
+                    <has_text text="&quot;models&quot;"/>
+                    <has_text text="&quot;value&quot;: &quot;model1&quot;"/>
+                    <has_text text="&quot;path&quot;: &quot;reference.txt&quot;"/>
+                </assert_contents>
+            </output>
+        </test>
+    </tests>
+    <help format="markdown"><![CDATA[
+Creates a one-line synthetic reference and returns native data-manager JSON for
+the `models` table. Its registration configuration moves the file into Galaxy's
+reference-data directory and records the resolved path.
+
+This CI fixture downloads no assets and installs no model weights.
+    ]]></help>
+    <citations>
+        <citation type="bibtex">@misc{galaxy_tool_xml, title={Galaxy Tool XML File}, url={https://docs.galaxyproject.org/en/latest/dev/schema.html}}</citation>
+    </citations>
+</tool>
